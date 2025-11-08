@@ -5,16 +5,24 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
-    <name>Shutdown-Tasks</name>
+    <name>Shutdown Tasks</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor url="https://www.yourcompany.com">YourCompany</vendor>
+    <vendor url="https://github.com/gdw96" email="contact@gdw.dev">GDW</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
     <description><![CDATA[
-        Enter short description for your plugin here.<br>
-        <em>most HTML tags may be used</em>
+        Execute run configurations automatically when closing a project or IDE.<br>
+        <br>
+        This plugin is the mirror of "Startup Tasks" feature, allowing you to run tasks on project/IDE shutdown instead of startup.<br>
+        <br>
+        <em>Features:</em>
+        <ul>
+            <li>Select run configurations to execute on project close</li>
+            <li>Execute tasks in the order they were selected</li>
+            <li>Easy configuration via Settings > Tools > Shutdown Tasks</li>
+        </ul>
     ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -24,6 +32,21 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <!-- Service pour stocker l'état des tâches -->
+        <projectService serviceImplementation="dev.gdw.shutdowntasks.ShutdownTasksState"/>
 
+        <!-- Configurable pour le panneau de configuration -->
+        <projectConfigurable
+                parentId="tools"
+                instance="dev.gdw.shutdowntasks.ShutdownTasksConfigurable"
+                id="dev.gdw.shutdowntasks.ShutdownTasksConfigurable"
+                displayName="Shutdown Tasks"
+        />
     </extensions>
+
+    <!-- Listeners -->
+    <projectListeners>
+        <listener class="dev.gdw.shutdowntasks.ShutdownTasksProjectListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </projectListeners>
 </idea-plugin>
