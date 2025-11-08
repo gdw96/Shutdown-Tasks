@@ -10,7 +10,7 @@ import javax.swing.JComponent
 import javax.swing.ListSelectionModel
 
 /**
- * Dialogue pour sélectionner les configurations à ajouter.
+ * Dialog box for selecting configurations to add.
  */
 class ShutdownTasksSelectionDialog(
     project: Project,
@@ -19,8 +19,9 @@ class ShutdownTasksSelectionDialog(
 
     private val configList = JBList<RunnerAndConfigurationSettings>().apply {
         setListData(availableConfigs.toTypedArray())
-        selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
+        selectionMode = ListSelectionModel.SINGLE_SELECTION
         cellRenderer = RunConfigurationListCellRenderer()
+        emptyText.text = "No or no more runtime configurations available."
     }
 
     val selectedConfigurations: List<RunnerAndConfigurationSettings>

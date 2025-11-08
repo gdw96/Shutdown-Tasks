@@ -1,48 +1,189 @@
 package dev.gdw.shutdowntasks
 
-import com.intellij.execution.ExecutionManager
+import com.intellij.execution.Executor
+import com.intellij.execution.ProgramRunnerUtil
 import com.intellij.execution.RunManager
+import com.intellij.execution.RunnerAndConfigurationSettings
+import com.intellij.execution.configurations.RuntimeConfigurationException
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
+import com.intellij.execution.runners.ProgramRunner
+import com.intellij.execution.ui.RunContentDescriptor
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import org.jetbrains.annotations.Nullable
 
 /**
- * Exécuteur des tâches de fermeture.
+ * Performer of closing tasks.
  */
 object ShutdownTasksRunner {
 
     private val LOG = Logger.getInstance(ShutdownTasksRunner::class.java)
 
-    fun runTasks(project: Project, configurationIds: List<String>) {
-        LOG.warn("=== SHUTDOWN TASKS: Starting execution of ${configurationIds.size} tasks ===")
+    fun runTasks(project: Project, configurationIds: List<String>, timeoutSeconds: Int) {
+        if (configurationIds.isEmpty()) {
+            return
+        }
 
-        val runManager = RunManager.getInstance(project)
+        // Run with a modal progress bar
+        ProgressManager.getInstance().run(object: Task.Modal(project, "Executing Shutdown Tasks", true) {
+            override fun run(indicator: ProgressIndicator) {
+                executeConfigurations(project, configurationIds, indicator, timeoutSeconds)
+            }
+        })
+    }
+
+    private fun executeConfigurations(
+        project: Project,
+        configurationIds: List<String>,
+        indicator: ProgressIndicator,
+        timeoutSeconds: Int
+    ) {
+        indicator.text2 = "Starting tasks..."
+        val totalTasks = configurationIds.size
 
         configurationIds.forEachIndexed { index, configId ->
-            LOG.warn("SHUTDOWN TASKS: Executing task ${index + 1}/${configurationIds.size}: ID=$configId")
+            try {
+                executeConfiguration(project, configId, indicator, timeoutSeconds, totalTasks, index + 1)
+            } catch (e: Exception) {
+                LOG.error("SHUTDOWN TASKS: Error executing task $configId", e)
+                indicator.text2 = "Failed: ${e.message}"
+                Thread.sleep(1000)
+            }
+        }
+    }
 
-            val runConfigSettings = runManager.allSettings.find { it.uniqueID == configId }
+    private fun executeConfiguration(
+        project: Project,
+        configId: String,
+        indicator: ProgressIndicator,
+        timeoutSeconds: Int,
+        totalTasks: Int,
+        currentTask: Int
+    ) {
+        val indicatorIndex = "($currentTask/$totalTasks)"
+        indicator.text2 = "Starting task... $indicatorIndex"
+        indicator.fraction = 0.0
+        indicator.isIndeterminate = true
 
-            if (runConfigSettings != null) {
-                LOG.warn("SHUTDOWN TASKS: Configuration found: ${runConfigSettings.name} (${runConfigSettings.type.displayName})")
-                try {
-                    val executor = DefaultRunExecutor.getRunExecutorInstance()
-                    val environment = ExecutionEnvironmentBuilder.create(executor, runConfigSettings)
-                        .build()
+        ApplicationManager.getApplication().invokeAndWait({
+            val configurationSettings = getConfigurationSettings(project, configId)
+            val executor = DefaultRunExecutor.getRunExecutorInstance()
+                ?: throw RuntimeConfigurationException("Executor not found")
+            val environment = getRuntimeEnvironment(executor, configurationSettings, indicator, indicatorIndex)
 
-                    LOG.warn("SHUTDOWN TASKS: Executing configuration...")
-                    ExecutionManager.getInstance(project).restartRunProfile(environment)
-                    LOG.warn("SHUTDOWN TASKS: Configuration executed successfully")
-                } catch (e: Exception) {
-                    LOG.error("SHUTDOWN TASKS: Error executing task ${runConfigSettings.name}", e)
-                    e.printStackTrace()
-                }
+            val runner = ProgramRunner.getRunner(executor.id, configurationSettings.configuration)
+            if (runner == null) {
+                // Fallback
+                ProgramRunnerUtil.executeConfiguration(environment, true, true)
+                // ExecutionManager.getInstance(project).restartRunProfile(environment)
             } else {
-                LOG.warn("SHUTDOWN TASKS: Configuration NOT found for ID: $configId")
+                runner.execute(environment)
+            }
+        }, ModalityState.defaultModalityState())
+
+        waitForCompletion(indicator, indicatorIndex, timeoutSeconds)
+    }
+
+    private fun getConfigurationSettings(project: Project, configId: String): RunnerAndConfigurationSettings {
+        val runManager = RunManager.getInstance(project)
+        val configurationSettings = runManager.allSettings.find { it.uniqueID == configId }
+
+        if (configurationSettings == null) {
+            throw RuntimeConfigurationException("Configuration not found for $configId")
+        }
+
+        return configurationSettings
+    }
+
+    private fun getRuntimeEnvironment(
+        executor: Executor,
+        configurationSettings: RunnerAndConfigurationSettings,
+        indicator: ProgressIndicator,
+        indicatorIndex: String
+    ): ExecutionEnvironment {
+        val builder = ExecutionEnvironmentBuilder.createOrNull(executor, configurationSettings)
+            ?: throw RuntimeConfigurationException("Builder not created for ${configurationSettings.name}")
+
+        val environment = builder.activeTarget().build(object : ProgramRunner.Callback {
+            override fun processStarted(descriptor: RunContentDescriptor?) {
+                val processHandler = descriptor?.getProcessHandler()
+                LOG.debug("SHUTDOWN TASKS: Process started: ${processHandler.toString()}")
+
+                if (processHandler != null) {
+                    indicator.text2 = "Task started... $indicatorIndex"
+                    indicator.fraction = 0.25
+
+                    processHandler.addProcessListener(object : ProcessListener {
+                        override fun startNotified(event: ProcessEvent) {
+                            LOG.debug("SHUTDOWN TASKS: Process start notified: $event")
+                            indicator.fraction = 0.5
+                        }
+
+                        override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                            LOG.debug("SHUTDOWN TASKS: Process will terminate: $event")
+                            indicator.fraction = 0.75
+                        }
+
+                        override fun processTerminated(event: ProcessEvent) {
+                            LOG.debug("SHUTDOWN TASKS: Process terminated: $event with code: ${event.exitCode}")
+                            indicator.fraction = 1.0
+                            indicator.text2 = "Task complete!  $indicatorIndex"
+                        }
+                    })
+                }
+            }
+
+            override fun processNotStarted(@Nullable error: Throwable?) {
+                if (error != null) {
+                    LOG.error("SHUTDOWN TASKS: Process notified: ${error.toString()}")
+                } else {
+                    LOG.warn("SHUTDOWN TASKS: Process notified: processNotStarted")
+                }
+            }
+        })
+
+        return environment
+    }
+
+    private fun waitForCompletion(indicator: ProgressIndicator, indicatorIndex: String, timeoutSeconds: Int) {
+        indicator.text2 = "Task launched, waiting...  $indicatorIndex"
+        LOG.debug("SHUTDOWN TASKS: Waiting for timeout of ${timeoutSeconds}s...")
+
+        // Wait for the timeout while showing progress
+        val startTime = System.currentTimeMillis()
+        for (elapsed in 1..timeoutSeconds) {
+            if (indicator.isCanceled) {
+                LOG.debug("SHUTDOWN TASKS: Canceled by user")
+                indicator.text2 = "Canceled $indicatorIndex"
+                return
+            }
+
+            if (indicator.fraction < 1.0) {
+                Thread.sleep(1000)
+                val actualElapsed = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                indicator.text2 = "Waiting... (${actualElapsed}s / ${timeoutSeconds}s) $indicatorIndex"
+            } else {
+                break
             }
         }
 
-        LOG.warn("=== SHUTDOWN TASKS: Finished execution ===")
+        val totalElapsed = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+        if (totalElapsed >= timeoutSeconds) {
+            LOG.debug("SHUTDOWN TASKS: Timeout reached after ${totalElapsed}s")
+            indicator.text2 = "Timeout reached (${totalElapsed}s) $indicatorIndex"
+        } else {
+            LOG.debug("SHUTDOWN TASKS: Task finished after ${totalElapsed}s")
+            indicator.text2 = "Task finished (${totalElapsed}s) $indicatorIndex"
+        }
+        Thread.sleep(500)
     }
 }
