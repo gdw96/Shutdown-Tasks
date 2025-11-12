@@ -30,6 +30,8 @@ dependencies {
 
         // Add necessary plugin dependencies for compilation here, example:
         // bundledPlugin("com.intellij.java")
+
+        testImplementation("junit:junit:4.13.2")
     }
 }
 
@@ -56,6 +58,13 @@ tasks {
     withType<JavaCompile> {
         sourceCompatibility = "21"
         targetCompatibility = "21"
+    }
+
+    test {
+        useJUnit()
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
     }
 }
 
