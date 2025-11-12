@@ -1,20 +1,18 @@
-package dev.gdw.shutdowntasks
+package dev.gdw.shutdowntasks.ui
 
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
-import com.intellij.execution.configurations.RuntimeConfigurationError
-import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.impl.EditConfigurationsDialog
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.options.BoundSearchableConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.ui.JBIntSpinner
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBList
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.Align
-import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
+import dev.gdw.shutdowntasks.settings.ShutdownTasksState
+import dev.gdw.shutdowntasks.utils.RunnerAndConfigurationSettingsUtils
 import javax.swing.DefaultListModel
 import javax.swing.ListSelectionModel
 
@@ -27,11 +25,11 @@ class ShutdownTasksConfigurable(private val project: Project) :
     private val listModel = DefaultListModel<RunnerAndConfigurationSettings>()
     private val taskList = JBList(listModel).apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
-        cellRenderer = RunConfigurationListCellRenderer()
+        cellRenderer = RunnerAndConfigurationSettingsListCellRenderer()
         emptyText.text = "Add run configurations with the + button"
     }
 
-    private var timeoutTextField: JBTextField? = null
+    private var timeoutIntSpinner: JBIntSpinner? = null
 
     override fun createPanel(): DialogPanel {
         return panel {
@@ -57,31 +55,18 @@ class ShutdownTasksConfigurable(private val project: Project) :
 
             row {
                 label("Timeout per task (seconds):")
-                timeoutTextField = textField()
-                    .columns(6)
+                timeoutIntSpinner = spinner(
+                    IntRange(ShutdownTasksState.MIN_TIMEOUT_SECONDS, ShutdownTasksState.MAX_TIMEOUT_SECONDS),
+                    1
+                )
                     .comment("Maximum time to wait for each task (${ShutdownTasksState.MIN_TIMEOUT_SECONDS}-${ShutdownTasksState.MAX_TIMEOUT_SECONDS} seconds)")
-                    .validationOnInput {
-                        val timeoutText = it.text
-                        val timeout = timeoutText.toIntOrNull()
-                        if (timeout == null) {
-                            error("Invalid timeout: $timeoutText. Defaults to ${ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS}")
-                        } else {
-                            if (timeout > ShutdownTasksState.MAX_TIMEOUT_SECONDS) {
-                                error("Invalid timeout: $timeoutText. Max is ${ShutdownTasksState.MAX_TIMEOUT_SECONDS}")
-                            } else if(timeout < ShutdownTasksState.MIN_TIMEOUT_SECONDS) {
-                                error("Invalid timeout: $timeoutText. Min is ${ShutdownTasksState.MIN_TIMEOUT_SECONDS}")
-                            } else {
-                                null
-                            }
-                        }
-                    }
                     .component
                 icon(AllIcons.General.ContextHelp)
                     .component
                     .toolTipText = "⚠️ Warning: It is impossible to know the status of certain tasks. In this case, the timeout will run its entire course. Once the timeout is complete, the project may close and kill any tasks that are currently running. For best results, keep tasks short."
 
                 // Initialize the default value
-                timeoutTextField?.text = ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS.toString()
+                timeoutIntSpinner?.value = ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS
             }
         }
     }
@@ -100,7 +85,7 @@ class ShutdownTasksConfigurable(private val project: Project) :
         }
 
         // Load options
-        timeoutTextField?.text = state.getTimeoutSeconds().toString()
+        timeoutIntSpinner?.value = state.getTimeoutSeconds()
     }
 
     override fun apply() {
@@ -108,8 +93,8 @@ class ShutdownTasksConfigurable(private val project: Project) :
 
         for (i in 0 until listModel.size()) {
             val it = listModel.getElementAt(i)
-            if (!isConfigurationRunnable(it)) {
-                openEditConfigurationDialog(it)
+            if (!RunnerAndConfigurationSettingsUtils.isConfigurationRunnable(it)) {
+                RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(project, it)
                 return
             }
         }
@@ -123,9 +108,8 @@ class ShutdownTasksConfigurable(private val project: Project) :
         state.setConfigurationIds(configIds)
 
         // Parse and validate the timeout
-        val timeoutText = timeoutTextField?.text ?: ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS.toString()
-        val timeout = timeoutText.toIntOrNull() ?: ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS
-        state.setTimeoutSeconds(timeout)
+        val timeout = timeoutIntSpinner?.value ?: ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS
+        state.setTimeoutSeconds((timeout) as Int)
     }
 
     override fun isModified(): Boolean {
@@ -138,9 +122,8 @@ class ShutdownTasksConfigurable(private val project: Project) :
 
         val idsModified = currentIds != savedIds
 
-        val timeoutText = timeoutTextField?.text ?: ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS.toString()
-        val currentTimeout = timeoutText.toIntOrNull() ?: ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS
-        val timeoutModified = currentTimeout != state.getTimeoutSeconds()
+        val timeout = timeoutIntSpinner?.value ?: ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS
+        val timeoutModified = timeout != state.getTimeoutSeconds()
 
         return idsModified || timeoutModified
     }
@@ -156,13 +139,13 @@ class ShutdownTasksConfigurable(private val project: Project) :
             return
         }
 
-        val dialog = ShutdownTasksSelectionDialog(project, availableConfigs)
+        val dialog = RunnerAndConfigurationSettingsSelectionDialog(project, availableConfigs)
         if (dialog.showAndGet()) {
             dialog.selectedConfigurations.forEach {
-                if (isConfigurationRunnable(it)) {
+                if (RunnerAndConfigurationSettingsUtils.isConfigurationRunnable(it)) {
                     listModel.addElement(it)
                 } else {
-                    openEditConfigurationDialog(it)
+                    RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(project, it)
                 }
             }
         }
@@ -174,7 +157,7 @@ class ShutdownTasksConfigurable(private val project: Project) :
 
         val selected: RunnerAndConfigurationSettings = listModel.getElementAt(selectedIndices[0]) ?: return
 
-        openEditConfigurationDialog(selected)
+        RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(project, selected)
     }
 
     private fun removeTask() {
@@ -198,26 +181,5 @@ class ShutdownTasksConfigurable(private val project: Project) :
             listModel.add(selectedIndex + 1, element)
             taskList.selectedIndex = selectedIndex + 1
         }
-    }
-
-    private fun openEditConfigurationDialog(config: RunnerAndConfigurationSettings) {
-        val runManager = RunManager.getInstance(project)
-        val was = runManager.selectedConfiguration
-
-        try {
-            runManager.selectedConfiguration = config
-            EditConfigurationsDialog(project).showAndGet()
-        } finally {
-            runManager.selectedConfiguration = was
-        }
-    }
-
-    private fun isConfigurationRunnable(config: RunnerAndConfigurationSettings): Boolean {
-        try {
-            config.checkSettings(DefaultRunExecutor.getRunExecutorInstance())
-        } catch (e: RuntimeConfigurationError) {
-            return false
-        }
-        return true
     }
 }

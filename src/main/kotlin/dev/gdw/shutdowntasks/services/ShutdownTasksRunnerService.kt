@@ -1,8 +1,7 @@
-package dev.gdw.shutdowntasks
+package dev.gdw.shutdowntasks.services
 
 import com.intellij.execution.Executor
 import com.intellij.execution.ProgramRunnerUtil
-import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.execution.configurations.RuntimeConfigurationException
 import com.intellij.execution.executors.DefaultRunExecutor
@@ -19,14 +18,15 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import dev.gdw.shutdowntasks.utils.RunnerAndConfigurationSettingsUtils
 import org.jetbrains.annotations.Nullable
 
 /**
  * Performer of closing tasks.
  */
-object ShutdownTasksRunner {
+object ShutdownTasksRunnerService {
 
-    private val LOG = Logger.getInstance(ShutdownTasksRunner::class.java)
+    private val LOG = Logger.getInstance(ShutdownTasksRunnerService::class.java)
 
     fun runTasks(project: Project, configurationIds: List<String>, timeoutSeconds: Int) {
         if (configurationIds.isEmpty()) {
@@ -75,7 +75,7 @@ object ShutdownTasksRunner {
         indicator.isIndeterminate = true
 
         ApplicationManager.getApplication().invokeAndWait({
-            val configurationSettings = getConfigurationSettings(project, configId)
+            val configurationSettings = RunnerAndConfigurationSettingsUtils.findRunnerAndConfigurationSettings(project, configId)
             val executor = DefaultRunExecutor.getRunExecutorInstance()
                 ?: throw RuntimeConfigurationException("Executor not found")
             val environment = getRuntimeEnvironment(executor, configurationSettings, indicator, indicatorIndex)
@@ -91,17 +91,6 @@ object ShutdownTasksRunner {
         }, ModalityState.defaultModalityState())
 
         waitForCompletion(indicator, indicatorIndex, timeoutSeconds)
-    }
-
-    private fun getConfigurationSettings(project: Project, configId: String): RunnerAndConfigurationSettings {
-        val runManager = RunManager.getInstance(project)
-        val configurationSettings = runManager.allSettings.find { it.uniqueID == configId }
-
-        if (configurationSettings == null) {
-            throw RuntimeConfigurationException("Configuration not found for $configId")
-        }
-
-        return configurationSettings
     }
 
     private fun getRuntimeEnvironment(

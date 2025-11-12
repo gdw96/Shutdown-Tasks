@@ -1,4 +1,4 @@
-package dev.gdw.shutdowntasks
+package dev.gdw.shutdowntasks.ui
 
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.openapi.project.Project
@@ -12,7 +12,7 @@ import javax.swing.ListSelectionModel
 /**
  * Dialog box for selecting configurations to add.
  */
-class ShutdownTasksSelectionDialog(
+class RunnerAndConfigurationSettingsSelectionDialog(
     project: Project,
     private val availableConfigs: List<RunnerAndConfigurationSettings>
 ) : DialogWrapper(project) {
@@ -20,7 +20,7 @@ class ShutdownTasksSelectionDialog(
     private val configList = JBList<RunnerAndConfigurationSettings>().apply {
         setListData(availableConfigs.toTypedArray())
         selectionMode = ListSelectionModel.SINGLE_SELECTION
-        cellRenderer = RunConfigurationListCellRenderer()
+        cellRenderer = RunnerAndConfigurationSettingsListCellRenderer()
         emptyText.text = "No or no more runtime configurations available."
     }
 
