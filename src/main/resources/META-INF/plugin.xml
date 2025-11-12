@@ -72,8 +72,8 @@
         <!-- Configuration panel in Settings -->
         <projectConfigurable
                 parentId="tools"
-                instance="dev.gdw.shutdowntasks.ShutdownTasksConfigurable"
-                id="dev.gdw.shutdowntasks.ShutdownTasksConfigurable"
+                instance="dev.gdw.shutdowntasks.ui.ShutdownTasksConfigurable"
+                id="dev.gdw.shutdowntasks.ui.ShutdownTasksConfigurable"
                 displayName="Shutdown Tasks"
         />
     </extensions>
@@ -82,7 +82,7 @@
     <projectListeners>
         <!-- Project closing listener to trigger shutdown tasks -->
         <listener
-                class="dev.gdw.shutdowntasks.listener.ShutdownTasksProjectCloseListener"
+                class="dev.gdw.shutdowntasks.listeners.ShutdownTasksProjectCloseListener"
                 topic="com.intellij.openapi.project.ProjectCloseListener"
         />
     </projectListeners>
