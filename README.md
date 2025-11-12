@@ -1,20 +1,19 @@
-# Shutdown Tasks Plugin
+# Shutdown Tasks Plugin for JetBrains IDE family
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
 ![Platform](https://img.shields.io/badge/platform-IntelliJ-orange)
 
-Execute run configurations automatically when closing a project or IDE - the mirror feature of IntelliJ's built-in "Startup Tasks".
+This plugin executes run configurations automatically when closing a project or IDE - the mirror feature of IntelliJ's built-in "Startup Tasks".
 
 ## Table of Contents
 
 <!-- TOC -->
-* [Shutdown Tasks Plugin](#shutdown-tasks-plugin)
+* [Shutdown Tasks Plugin for JetBrains IDE family](#shutdown-tasks-plugin-for-jetbrains-ide-family)
   * [Table of Contents](#table-of-contents)
   * [Features](#features)
     * [🚀 Automated Task Execution](#-automated-task-execution)
     * [🎨 User-Friendly Interface](#-user-friendly-interface)
-    * [🔍 Smart Configuration Tracking](#-smart-configuration-tracking)
   * [Installation](#installation)
     * [From JetBrains Marketplace (Recommended)](#from-jetbrains-marketplace-recommended)
     * [Manual Installation](#manual-installation)
@@ -56,17 +55,13 @@ Execute run configurations automatically when closing a project or IDE - the mir
 - IDE waits for each task to complete
 - Configurable timeout per task (1-300 seconds)
 - Visual progress dialog with real-time status
-- ✅ Task output visible in Run tool window
+- Task output may be visible in Run tool window
 - Cancel anytime during execution
 
 ### 🎨 User-Friendly Interface
 - Intuitive configuration panel in **Settings → Tools → Shutdown Tasks**
 - Visual task list with configuration icons
 - Add/Edit/Remove and Reorder tasks easily
-
-### 🔍 Smart Configuration Tracking
-- Automatically follows configuration renames
-- Never loses track of your tasks
 
 ## Installation
 
@@ -105,18 +100,27 @@ cd shutdown-tasks
 
 3. **Add Tasks**
     - Click the **+** button
-    - Select one or more run configurations
+    - Select a run configuration
     - Click **OK**
 
-4. **Set Timeout** (Only in synchronous mode)
+4. **Remove Tasks**
+    - Select a run configuration
+    - Click the **-** button
+
+5. **Edit Tasks**
+    - Select a run configuration
+    - Click the **🖊** button
+
+6. **Reorder Tasks** (Optional)
+    - Select a run configuration
+    - Use ▲ / ▼ buttons to change execution order
+
+7. **Set Timeout** (Only in synchronous mode)
     - Default: 5 seconds per task
     - Range: 1-300 seconds
     - ⚠️ **Important:** The IDE will wait for the total duration of the timeout for each task where it is impossible to monitor execution.
 
-5. **Reorder Tasks** (Optional)
-    - Use ▲ / ▼ buttons to change execution order
-
-6. **Apply Changes**
+8. **Apply Changes**
     - Click **Apply** or **OK**
 
 ### Example Configurations
@@ -126,16 +130,15 @@ cd shutdown-tasks
 ```bash
 #!/bin/bash
 echo "Stopping development server..."
-pkill -f "node.*server.js"
+# Your server stop command here
 echo "Server stopped"
 exit
 ```
 **Configuration:**
 - Type: Shell Script
 - Script: `stop-server.sh`
-- Execution mode: Synchronous
-- Timeout: 5 seconds
-- Execute in the terminal: Unchecked ⚠️ **Important**
+- Interpreter path: `/bin/bash`
+- Execute in the terminal: Unchecked ⚠️ **Important** ⚠️
 
 ## Use Cases
 
@@ -172,13 +175,13 @@ Shutdown Tasks configuration is stored in `.idea/workspace.xml`.
 ### When and How Tasks Execute
 
 **Project Closing** (`File → Close Project`):
-- ✅ Tasks execute with progress dialog visible
+- ✅ Tasks executed with the progress dialog visible
 - ✅ You can see and cancel execution
-- ✅ IDE waits for tasks if "Wait for completion" is enabled
+- ✅ The IDE waits for tasks until the timeout expires.
 
 **IDE Closing** (`File → Exit` or close window):
-- ✅ Tasks execute automatically (projects close triggers them)
-- ⚠️ **No progress dialog shown** (IDE closes immediately)
+- ✅ Tasks executed automatically _(projects close triggers them)_
+- ⚠️ **No progress dialog shown** _(IDE closes immediately)_
 - ⚠️ Tasks run in background during shutdown
 - 💡 **Tip:** Use "Close Project" first if you want to monitor tasks
 
@@ -187,16 +190,17 @@ Shutdown Tasks configuration is stored in `.idea/workspace.xml`.
 
 ### Why Full Timeout sometimes?
 Due to IntelliJ Platform limitations, the plugin cannot reliably detect when a task completes.
+Or your task may take longer than the timeout.
 
 Therefore:
-- Tasks are launched and visible in the Run tool window
+- Tasks are launched and may be visible in the Run tool window
 - The progress dialog waits for the configured timeout
 - After timeout, the IDE continues closing
 
 ### Task Execution During Shutdown
-- Tasks execute in **sequential order** (one after another)
+- Tasks execute in **sequential order** _(one after another)_
 - Failed tasks don't prevent subsequent tasks from running
-- Task output is **always visible** in the Run tool window
+- Task output may be visible in the Run tool window
 - Errors are logged to `idea.log`
 
 ### Best Practices
@@ -223,6 +227,7 @@ Therefore:
 **Solutions:**
 - Test the run configuration manually first
 - Check task output in Run tool window
+- Make sure that the actions are carried out; the task may not display anything but still works.
 - Verify script paths and permissions
 - Add error handling to your scripts
 
