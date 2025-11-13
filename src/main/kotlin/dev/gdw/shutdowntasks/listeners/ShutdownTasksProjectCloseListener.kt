@@ -3,7 +3,7 @@ package dev.gdw.shutdowntasks.listeners
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCloseListener
-import dev.gdw.shutdowntasks.services.ShutdownTasksRunnerService
+import dev.gdw.shutdowntasks.utils.ShutdownTasksRunner
 import dev.gdw.shutdowntasks.settings.ShutdownTasksState
 
 /**
@@ -13,7 +13,7 @@ import dev.gdw.shutdowntasks.settings.ShutdownTasksState
  * the project closing event and execute configured tasks.
  *
  * @see ProjectCloseListener
- * @see ShutdownTasksRunnerService
+ * @see ShutdownTasksRunner
  * @see ShutdownTasksState
  */
 class ShutdownTasksProjectCloseListener : ProjectCloseListener {
@@ -39,7 +39,7 @@ class ShutdownTasksProjectCloseListener : ProjectCloseListener {
         LOG.info("Found ${configIds.size} tasks to execute: $configIds ; Timeout: ${timeoutSeconds}s")
 
         if (configIds.isNotEmpty()) {
-            ShutdownTasksRunnerService.runTasks(project, configIds, timeoutSeconds)
+            ShutdownTasksRunner.runTasks(project, configIds, timeoutSeconds)
         } else {
             LOG.info("No tasks configured")
         }

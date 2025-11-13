@@ -265,8 +265,6 @@ shutdown-tasks/
 ├── src/main/kotlin/dev/gdw/shutdowntasks/
 │   ├── listeners
 │   │   └── ShutdownTasksProjectCloseListener.kt                 # Project close listener
-│   ├── services
-│   │   └── ShutdownTasksRunnerService.kt                        # Task executor
 │   ├── settings
 │   │   └── ShutdownTasksState.kt                                # State persistence
 │   ├── ui
@@ -274,7 +272,8 @@ shutdown-tasks/
 │   │   ├── RunnerAndConfigurationSettingsSelectionDialog.kt     # Task selection dialog
 │   │   └── ShutdownTasksConfigurable.kt                         # Settings UI
 │   └── utils
-│       └── RunnerAndConfigurationSettingsUtils.kt               # RunnerAndConfigurationSettings Utility
+│       ├── RunnerAndConfigurationSettingsUtils.kt               # RunnerAndConfigurationSettings Utility
+│       └── ShutdownTasksRunner.kt                               # Tasks executor
 ├── src/main/resources/META-INF/
 │   ├── plugin.xml                                               # Plugin descriptor
 │   └── pluginIcon.svg                                           # Plugin icon
