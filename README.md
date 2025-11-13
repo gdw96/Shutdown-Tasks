@@ -1,3 +1,7 @@
+<div align="center" style="margin: 15px 0 -40px 0">
+  <img src="src/main/resources/META-INF/pluginIcon.svg" alt="Centered Image" width="20%" height="auto">
+</div>
+
 # Shutdown Tasks Plugin for JetBrains IDE family
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
