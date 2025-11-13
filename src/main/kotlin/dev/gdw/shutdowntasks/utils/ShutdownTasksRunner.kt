@@ -1,4 +1,4 @@
-package dev.gdw.shutdowntasks.services
+package dev.gdw.shutdowntasks.utils
 
 import com.intellij.execution.Executor
 import com.intellij.execution.RunnerAndConfigurationSettings
@@ -17,15 +17,14 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import dev.gdw.shutdowntasks.utils.RunnerAndConfigurationSettingsUtils
 import org.jetbrains.annotations.Nullable
 
 /**
  * Performer of closing tasks.
  */
-object ShutdownTasksRunnerService {
+object ShutdownTasksRunner {
 
-    private val LOG = Logger.getInstance(ShutdownTasksRunnerService::class.java)
+    private val LOG = Logger.getInstance(ShutdownTasksRunner::class.java)
 
     fun runTasks(project: Project, configurationIds: List<String>, timeoutSeconds: Int) {
         if (configurationIds.isEmpty()) {
