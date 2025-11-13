@@ -11,6 +11,7 @@ import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBList
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
+import dev.gdw.shutdowntasks.ShutdownTasksBundle
 import dev.gdw.shutdowntasks.settings.ShutdownTasksState
 import dev.gdw.shutdowntasks.utils.RunnerAndConfigurationSettingsUtils
 import javax.swing.DefaultListModel
@@ -20,13 +21,17 @@ import javax.swing.ListSelectionModel
  * Configurable for the Shutdown Tasks control panel.
  */
 class ShutdownTasksConfigurable(private val project: Project) :
-    BoundSearchableConfigurable("Shutdown Tasks", "shutdown.tasks", "shutdown.tasks") {
-
+    BoundSearchableConfigurable(
+        ShutdownTasksBundle.message("dialog.configurable.title"),
+        "shutdown.tasks",
+        "shutdown.tasks"
+    )
+{
     private val listModel = DefaultListModel<RunnerAndConfigurationSettings>()
     private val taskList = JBList(listModel).apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         cellRenderer = RunnerAndConfigurationSettingsListCellRenderer()
-        emptyText.text = "Add run configurations with the + button"
+        emptyText.text = ShutdownTasksBundle.message("dialog.configurable.list.empty")
     }
 
     private var timeoutIntSpinner: JBIntSpinner? = null
@@ -34,8 +39,8 @@ class ShutdownTasksConfigurable(private val project: Project) :
     override fun createPanel(): DialogPanel {
         return panel {
             row {
-                label("To be started on project closing:")
-                    .comment("Run tasks and tools via run configurations")
+                label(ShutdownTasksBundle.message("dialog.configurable.label.tasks"))
+                    .comment(ShutdownTasksBundle.message("dialog.configurable.label.tasks.comment"))
             }
             row {
                 val decorator = ToolbarDecorator.createDecorator(taskList)
@@ -54,16 +59,22 @@ class ShutdownTasksConfigurable(private val project: Project) :
             separator()
 
             row {
-                label("Timeout per task (seconds):")
+                label(ShutdownTasksBundle.message("dialog.configurable.label.timeout"))
                 timeoutIntSpinner = spinner(
-                    IntRange(ShutdownTasksState.MIN_TIMEOUT_SECONDS, ShutdownTasksState.MAX_TIMEOUT_SECONDS),
-                    1
-                )
-                    .comment("Maximum time to wait for each task (${ShutdownTasksState.MIN_TIMEOUT_SECONDS}-${ShutdownTasksState.MAX_TIMEOUT_SECONDS} seconds)")
+                        IntRange(ShutdownTasksState.MIN_TIMEOUT_SECONDS, ShutdownTasksState.MAX_TIMEOUT_SECONDS),
+                        1
+                    )
+                    .comment(
+                        ShutdownTasksBundle.message(
+                            "dialog.configurable.label.timeout.comment",
+                            ShutdownTasksState.MIN_TIMEOUT_SECONDS,
+                            ShutdownTasksState.MAX_TIMEOUT_SECONDS
+                        )
+                    )
                     .component
                 icon(AllIcons.General.ContextHelp)
                     .component
-                    .toolTipText = "⚠️ Warning: It is impossible to know the status of certain tasks. In this case, the timeout will run its entire course. Once the timeout is complete, the project may close and kill any tasks that are currently running. For best results, keep tasks short."
+                    .toolTipText = ShutdownTasksBundle.message("dialog.configurable.label.timeout.tooltip")
 
                 // Initialize the default value
                 timeoutIntSpinner?.value = ShutdownTasksState.DEFAULT_TIMEOUT_SECONDS

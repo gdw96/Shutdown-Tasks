@@ -4,6 +4,7 @@ import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.icons.AllIcons
 import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleListCellRenderer
+import dev.gdw.shutdowntasks.ShutdownTasksBundle
 import dev.gdw.shutdowntasks.utils.RunnerAndConfigurationSettingsUtils
 import javax.swing.JList
 
@@ -25,11 +26,11 @@ class RunnerAndConfigurationSettingsListCellRenderer : SimpleListCellRenderer<Ru
 
             if (!RunnerAndConfigurationSettingsUtils.isConfigurationRunnable(value)) {
                 icon = AllIcons.RunConfigurations.TestError
-                toolTipText = "Configuration is not runnable."
+                toolTipText = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.cell.cannotBeRun.tooltip")
                 foreground = JBColor.RED
             } else if (RunnerAndConfigurationSettingsUtils.isShConfigurationType(value)) {
                 icon = AllIcons.General.ShowWarning
-                toolTipText = "Please ensure that the “Execute in the terminal” box is unchecked."
+                toolTipText = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.cell.warningTerminal.tooltip")
             }
         }
     }

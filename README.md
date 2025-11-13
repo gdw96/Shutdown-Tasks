@@ -267,20 +267,25 @@ Therefore:
 ```
 shutdown-tasks/
 ├── src/main/kotlin/dev/gdw/shutdowntasks/
-│   ├── listeners
+│   ├── listeners/
 │   │   └── ShutdownTasksProjectCloseListener.kt                 # Project close listener
-│   ├── settings
+│   ├── settings/
 │   │   └── ShutdownTasksState.kt                                # State persistence
-│   ├── ui
+│   ├── ui/
 │   │   ├── RunnerAndConfigurationSettingsListCellRenderer.kt    # UI renderer
 │   │   ├── RunnerAndConfigurationSettingsSelectionDialog.kt     # Task selection dialog
 │   │   └── ShutdownTasksConfigurable.kt                         # Settings UI
-│   └── utils
-│       ├── RunnerAndConfigurationSettingsUtils.kt               # RunnerAndConfigurationSettings Utility
-│       └── ShutdownTasksRunner.kt                               # Tasks executor
-├── src/main/resources/META-INF/
-│   ├── plugin.xml                                               # Plugin descriptor
-│   └── pluginIcon.svg                                           # Plugin icon
+│   ├── utils/
+│   │   ├── RunnerAndConfigurationSettingsUtils.kt               # RunnerAndConfigurationSettings Utility
+│   │   └── ShutdownTasksRunner.kt                               # Tasks executor
+│   └── ShutdownTasksBundle.kt                                   # Intl
+├── src/main/resources/
+│   ├── META-INF/
+│   │    ├── plugin.xml                                          # Plugin descriptor
+│   │    └── pluginIcon.svg                                      # Plugin icon
+│   └── messages/                                                # Translation files
+│        ├── ShutdownTasksBundle.properties
+│        └── ShutdownTasksBundle_fr.properties
 ├── build.gradle.kts                                             # Build configuration
 └── README.md
 ```

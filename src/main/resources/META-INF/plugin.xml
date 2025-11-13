@@ -74,7 +74,8 @@
                 parentId="tools"
                 instance="dev.gdw.shutdowntasks.ui.ShutdownTasksConfigurable"
                 id="dev.gdw.shutdowntasks.ui.ShutdownTasksConfigurable"
-                displayName="Shutdown Tasks"
+                key="dialog.configurable.title"
+                bundle="messages.ShutdownTasksBundle"
         />
     </extensions>
 
