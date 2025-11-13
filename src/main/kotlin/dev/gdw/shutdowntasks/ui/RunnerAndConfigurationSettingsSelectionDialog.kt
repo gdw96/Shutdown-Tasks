@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
+import dev.gdw.shutdowntasks.ShutdownTasksBundle
 import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.ListSelectionModel
@@ -21,14 +22,14 @@ class RunnerAndConfigurationSettingsSelectionDialog(
         setListData(availableConfigs.toTypedArray())
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         cellRenderer = RunnerAndConfigurationSettingsListCellRenderer()
-        emptyText.text = "No or no more runtime configurations available."
+        emptyText.text = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.noConfig")
     }
 
     val selectedConfigurations: List<RunnerAndConfigurationSettings>
         get() = configList.selectedValuesList
 
     init {
-        title = "Select Run Configurations"
+        title = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.title")
         init()
     }
 

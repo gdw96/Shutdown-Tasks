@@ -17,6 +17,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import dev.gdw.shutdowntasks.ShutdownTasksBundle
 import org.jetbrains.annotations.Nullable
 
 /**
@@ -32,11 +33,19 @@ object ShutdownTasksRunner {
         }
 
         // Run with a modal progress bar
-        ProgressManager.getInstance().run(object: Task.Modal(project, "Executing Shutdown Tasks", true) {
-            override fun run(indicator: ProgressIndicator) {
-                executeConfigurations(project, configurationIds, indicator, timeoutSeconds)
-            }
-        })
+        ProgressManager
+            .getInstance()
+            .run(
+                object: Task.Modal(
+                    project,
+                    ShutdownTasksBundle.message("dialog.execute.modal.progressbar.title"),
+                    true
+                ) {
+                    override fun run(indicator: ProgressIndicator) {
+                        executeConfigurations(project, configurationIds, indicator, timeoutSeconds)
+                    }
+                }
+            )
     }
 
     private fun executeConfigurations(
@@ -45,15 +54,15 @@ object ShutdownTasksRunner {
         indicator: ProgressIndicator,
         timeoutSeconds: Int
     ) {
-        indicator.text2 = "Starting tasks..."
         val totalTasks = configurationIds.size
+        indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.starting", 0, totalTasks)
 
         configurationIds.forEachIndexed { index, configId ->
             try {
                 executeConfiguration(project, configId, indicator, timeoutSeconds, totalTasks, index + 1)
             } catch (e: Exception) {
                 LOG.error("SHUTDOWN TASKS: Error executing task $configId", e)
-                indicator.text2 = "Failed: ${e.message}"
+                indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.error", configId)
                 Thread.sleep(1000)
             }
         }
@@ -67,8 +76,7 @@ object ShutdownTasksRunner {
         totalTasks: Int,
         currentTask: Int
     ) {
-        val indicatorIndex = "($currentTask/$totalTasks)"
-        indicator.text2 = "Starting task... $indicatorIndex"
+        indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.starting", currentTask, totalTasks)
         indicator.fraction = 0.0
         indicator.isIndeterminate = true
 
@@ -76,7 +84,7 @@ object ShutdownTasksRunner {
             val configurationSettings = RunnerAndConfigurationSettingsUtils.findRunnerAndConfigurationSettings(project, configId)
             val executor = DefaultRunExecutor.getRunExecutorInstance()
                 ?: throw RuntimeConfigurationException("Executor not found")
-            var environment = getRuntimeEnvironment(executor, configurationSettings, indicator, indicatorIndex)
+            var environment = getRuntimeEnvironment(executor, configurationSettings, indicator, currentTask, totalTasks)
 
             val runner = ProgramRunner.getRunner(executor.id, configurationSettings.configuration)
             if (runner == null) {
@@ -91,14 +99,15 @@ object ShutdownTasksRunner {
             }
         }, ModalityState.defaultModalityState())
 
-        waitForCompletion(indicator, indicatorIndex, timeoutSeconds)
+        waitForCompletion(indicator, timeoutSeconds, currentTask, totalTasks)
     }
 
     private fun getRuntimeEnvironment(
         executor: Executor,
         configurationSettings: RunnerAndConfigurationSettings,
         indicator: ProgressIndicator,
-        indicatorIndex: String
+        currentTask: Int,
+        totalTasks: Int
     ): ExecutionEnvironment {
         val builder = ExecutionEnvironmentBuilder.createOrNull(executor, configurationSettings)
             ?: throw RuntimeConfigurationException("Builder not created for ${configurationSettings.name}")
@@ -113,7 +122,7 @@ object ShutdownTasksRunner {
                     LOG.debug("SHUTDOWN TASKS: Process started: ${processHandler.toString()}")
 
                     if (processHandler != null) {
-                        indicator.text2 = "Task started... $indicatorIndex"
+                        indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.started", currentTask, totalTasks)
                         indicator.fraction = 0.25
 
                         processHandler.addProcessListener(object : ProcessListener {
@@ -130,7 +139,7 @@ object ShutdownTasksRunner {
                             override fun processTerminated(event: ProcessEvent) {
                                 LOG.debug("SHUTDOWN TASKS: Process terminated: $event with code: ${event.exitCode}")
                                 indicator.fraction = 1.0
-                                indicator.text2 = "Task complete!  $indicatorIndex"
+                                indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.complete", currentTask, totalTasks)
                             }
                         })
                     }
@@ -149,8 +158,13 @@ object ShutdownTasksRunner {
         return environment
     }
 
-    private fun waitForCompletion(indicator: ProgressIndicator, indicatorIndex: String, timeoutSeconds: Int) {
-        indicator.text2 = "Task launched, waiting...  $indicatorIndex"
+    private fun waitForCompletion(
+        indicator: ProgressIndicator,
+        timeoutSeconds: Int,
+        currentTask: Int,
+        totalTasks: Int
+    ) {
+        indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.running", currentTask, totalTasks)
         LOG.debug("SHUTDOWN TASKS: Waiting for timeout of ${timeoutSeconds}s...")
 
         // Wait for the timeout while showing progress
@@ -158,14 +172,20 @@ object ShutdownTasksRunner {
         for (elapsed in 1..timeoutSeconds) {
             if (indicator.isCanceled) {
                 LOG.debug("SHUTDOWN TASKS: Canceled by user")
-                indicator.text2 = "Canceled $indicatorIndex"
+                indicator.text2 = ShutdownTasksBundle.message("dialog.execute.modal.progressbar.text2.canceled", currentTask, totalTasks)
                 return
             }
 
             if (indicator.fraction < 1.0) {
                 Thread.sleep(1000)
                 val actualElapsed = ((System.currentTimeMillis() - startTime) / 1000).toInt()
-                indicator.text2 = "Waiting... (${actualElapsed}s / ${timeoutSeconds}s) $indicatorIndex"
+                indicator.text2 = ShutdownTasksBundle.message(
+                    "dialog.execute.modal.progressbar.text2.waiting",
+                    actualElapsed,
+                    timeoutSeconds,
+                    currentTask,
+                    totalTasks
+                )
             } else {
                 break
             }
@@ -174,10 +194,20 @@ object ShutdownTasksRunner {
         val totalElapsed = ((System.currentTimeMillis() - startTime) / 1000).toInt()
         if (totalElapsed >= timeoutSeconds) {
             LOG.debug("SHUTDOWN TASKS: Timeout reached after ${totalElapsed}s")
-            indicator.text2 = "Timeout reached (${totalElapsed}s) $indicatorIndex"
+            indicator.text2 = ShutdownTasksBundle.message(
+                "dialog.execute.modal.progressbar.text2.timeout",
+                totalElapsed,
+                currentTask,
+                totalTasks
+            )
         } else {
             LOG.debug("SHUTDOWN TASKS: Task finished after ${totalElapsed}s")
-            indicator.text2 = "Task finished (${totalElapsed}s) $indicatorIndex"
+            indicator.text2 = ShutdownTasksBundle.message(
+                "dialog.execute.modal.progressbar.text2.finished",
+                totalElapsed,
+                currentTask,
+                totalTasks
+            )
         }
         Thread.sleep(500)
     }
