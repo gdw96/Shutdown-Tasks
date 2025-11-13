@@ -1,7 +1,6 @@
 package dev.gdw.shutdowntasks.services
 
 import com.intellij.execution.Executor
-import com.intellij.execution.ProgramRunnerUtil
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.execution.configurations.RuntimeConfigurationException
 import com.intellij.execution.executors.DefaultRunExecutor
@@ -78,14 +77,17 @@ object ShutdownTasksRunnerService {
             val configurationSettings = RunnerAndConfigurationSettingsUtils.findRunnerAndConfigurationSettings(project, configId)
             val executor = DefaultRunExecutor.getRunExecutorInstance()
                 ?: throw RuntimeConfigurationException("Executor not found")
-            val environment = getRuntimeEnvironment(executor, configurationSettings, indicator, indicatorIndex)
+            var environment = getRuntimeEnvironment(executor, configurationSettings, indicator, indicatorIndex)
 
             val runner = ProgramRunner.getRunner(executor.id, configurationSettings.configuration)
             if (runner == null) {
-                // Fallback
-                ProgramRunnerUtil.executeConfiguration(environment, true, true)
+                // ProgramRunnerUtil.executeConfiguration(environment, true, true)
                 // ExecutionManager.getInstance(project).restartRunProfile(environment)
+                throw RuntimeConfigurationException("Runner not found for ${configurationSettings.name}")
             } else {
+                if (runner != environment.runner) {
+                    environment = ExecutionEnvironmentBuilder(environment).runner(runner).build()
+                }
                 runner.execute(environment)
             }
         }, ModalityState.defaultModalityState())
@@ -102,43 +104,48 @@ object ShutdownTasksRunnerService {
         val builder = ExecutionEnvironmentBuilder.createOrNull(executor, configurationSettings)
             ?: throw RuntimeConfigurationException("Builder not created for ${configurationSettings.name}")
 
-        val environment = builder.activeTarget().build(object : ProgramRunner.Callback {
-            override fun processStarted(descriptor: RunContentDescriptor?) {
-                val processHandler = descriptor?.getProcessHandler()
-                LOG.debug("SHUTDOWN TASKS: Process started: ${processHandler.toString()}")
+        val environment = builder
+            .activeTarget()
+            .contentToReuse(null)
+            .dataContext(null)
+            .build(object : ProgramRunner.Callback {
+                override fun processStarted(descriptor: RunContentDescriptor?) {
+                    val processHandler = descriptor?.getProcessHandler()
+                    LOG.debug("SHUTDOWN TASKS: Process started: ${processHandler.toString()}")
 
-                if (processHandler != null) {
-                    indicator.text2 = "Task started... $indicatorIndex"
-                    indicator.fraction = 0.25
+                    if (processHandler != null) {
+                        indicator.text2 = "Task started... $indicatorIndex"
+                        indicator.fraction = 0.25
 
-                    processHandler.addProcessListener(object : ProcessListener {
-                        override fun startNotified(event: ProcessEvent) {
-                            LOG.debug("SHUTDOWN TASKS: Process start notified: $event")
-                            indicator.fraction = 0.5
-                        }
+                        processHandler.addProcessListener(object : ProcessListener {
+                            override fun startNotified(event: ProcessEvent) {
+                                LOG.debug("SHUTDOWN TASKS: Process start notified: $event")
+                                indicator.fraction = 0.5
+                            }
 
-                        override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
-                            LOG.debug("SHUTDOWN TASKS: Process will terminate: $event")
-                            indicator.fraction = 0.75
-                        }
+                            override fun processWillTerminate(event: ProcessEvent, willBeDestroyed: Boolean) {
+                                LOG.debug("SHUTDOWN TASKS: Process will terminate: $event")
+                                indicator.fraction = 0.75
+                            }
 
-                        override fun processTerminated(event: ProcessEvent) {
-                            LOG.debug("SHUTDOWN TASKS: Process terminated: $event with code: ${event.exitCode}")
-                            indicator.fraction = 1.0
-                            indicator.text2 = "Task complete!  $indicatorIndex"
-                        }
-                    })
+                            override fun processTerminated(event: ProcessEvent) {
+                                LOG.debug("SHUTDOWN TASKS: Process terminated: $event with code: ${event.exitCode}")
+                                indicator.fraction = 1.0
+                                indicator.text2 = "Task complete!  $indicatorIndex"
+                            }
+                        })
+                    }
+                }
+
+                override fun processNotStarted(@Nullable error: Throwable?) {
+                    if (error != null) {
+                        LOG.error("SHUTDOWN TASKS: Process notified: ${error.toString()}")
+                    } else {
+                        LOG.warn("SHUTDOWN TASKS: Process notified: processNotStarted")
+                    }
                 }
             }
-
-            override fun processNotStarted(@Nullable error: Throwable?) {
-                if (error != null) {
-                    LOG.error("SHUTDOWN TASKS: Process notified: ${error.toString()}")
-                } else {
-                    LOG.warn("SHUTDOWN TASKS: Process notified: processNotStarted")
-                }
-            }
-        })
+        )
 
         return environment
     }

@@ -1,7 +1,7 @@
 # Shutdown Tasks Plugin for JetBrains IDE family
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Version](https://img.shields.io/badge/version-0.3.1-blue)
 ![Platform](https://img.shields.io/badge/platform-IntelliJ-orange)
 
 This plugin executes run configurations automatically when closing a project or IDE - the mirror feature of IntelliJ's built-in "Startup Tasks".
