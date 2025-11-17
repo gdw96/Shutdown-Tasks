@@ -119,7 +119,7 @@ cd shutdown-tasks
     - Select a run configuration
     - Use ▲ / ▼ buttons to change execution order
 
-7. **Set Timeout** (Only in synchronous mode)
+7. **Set Timeout**
     - Default: 5 seconds per task
     - Range: 1-300 seconds
     - ⚠️ **Important:** The IDE will wait for the total duration of the timeout for each task where it is impossible to monitor execution.
@@ -167,7 +167,7 @@ exit
 ![PluginPage](assets/img/PluginPage.png)
 ![PluginEmptyConfig](assets/img/PluginEmptyConfig.png)
 ![PluginSelectConfiguration](assets/img/PluginSelectConfiguration.png)
-![PluginConfigFill](assets/img/PluginConfigFill.png)
+![PluginConfigFilled](assets/img/PluginConfigFilled.png)
 ![PluginClosedModal](assets/img/PluginClosedModal.png)
 
 ## Configuration Files
