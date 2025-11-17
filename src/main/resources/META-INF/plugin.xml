@@ -17,38 +17,33 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
     <description><![CDATA[
         <h2>Shutdown Tasks</h2>
-        <p>Execute run configurations automatically when closing a project or IDE.</p>
+        <p>Execute run configurations automatically when closing a project or IDE - the mirror feature of IntelliJ's built-in "Startup Tasks".</p>
 
         <h3>Features</h3>
         <ul>
-            <li><strong>Automated Shutdown Scripts:</strong> Run cleanup scripts, deployment tasks, or any configured run configuration on project close</li>
-            <li><em>Synchronous mode:</em> Wait for tasks to complete with configurable timeout (1-300 seconds per task)</li>
-            <li><strong>Task Management:</strong> Add, remove, edit and reorder tasks with an intuitive UI (Settings → Tools → Shutdown Tasks)</li>
+            <li><strong>Automated Execution:</strong> Run configured run/debug configuration on project close</li>
+            <li><strong>Task Management:</strong> Add, remove, edit and reorder tasks with an intuitive UI</li>
             <li><strong>Visual Feedback:</strong> Progress dialog shows current task execution and elapsed time</li>
+            <li><strong>Sequential Execution:</strong> Tasks run in the order you define</li>
+            <li><strong>Configurable Timeout:</strong> Set timeout per task (1-300 seconds)</li>
         </ul>
 
         <h3>Important</h3>
-        <p><strong>⚠️ Please note that “Shell Script” tasks must not have “Execute in the terminal” selected.</p>
+        <p><strong>⚠️ Shell Script tasks must not have "Execute in the terminal" selected.</strong></p>
 
         <h3>Use Cases</h3>
         <ul>
-            <li>Run cleanup scripts to remove temporary files</li>
-            <li>Execute deployment or build tasks before closing</li>
             <li>Stop development servers or background processes</li>
-            <li>Commit or push code automatically</li>
-            <li>Archive or backup project files</li>
+            <li>Run cleanup scripts to remove temporary files</li>
+            <li>Commit, stash or push code automatically</li>
+            <li>Execute deployment or build tasks</li>
+            <li>Close connections and release resources</li>
         </ul>
 
         <h3>Configuration</h3>
-        <p>Configure shutdown tasks in <strong>Settings (Preferences) → Tools → Shutdown Tasks</strong></p>
-
-        <h3>Important Notes</h3>
-        <ul>
-            <li><strong>Synchronous mode:</strong> Tasks will wait for the configured timeout duration. For best performance, keep tasks short as possible.</li>
-            <li><strong>Task execution:</strong> Tasks are executed in the order they appear in the list</li>
-            <li><strong>Cancellation:</strong> You can cancel execution at any time</li>
-        </ul>
+        <p>Configure shutdown tasks in <strong>Settings → Tools → Shutdown Tasks</strong></p>
     ]]></description>
+
 
     <!-- Change notes for the current version -->
     <change-notes><![CDATA[
