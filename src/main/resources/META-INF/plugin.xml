@@ -7,7 +7,7 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
     <name>Shutdown Tasks</name>
 
-    <version>0.3.1</version>
+    <version>1.0.0</version>
     <idea-version since-build="252"/>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
@@ -47,7 +47,7 @@
 
     <!-- Change notes for the current version -->
     <change-notes><![CDATA[
-        <h3>Version 0.3.1</h3>
+        <h3>Version 1.0.0</h3>
         <ul>
             <li>Initial release</li>
             <li>Execute run configurations on project/IDE shutdown</li>
