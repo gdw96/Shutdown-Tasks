@@ -2,7 +2,6 @@ package dev.gdw.shutdowntasks.ui
 
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.icons.AllIcons
-import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleListCellRenderer
 import dev.gdw.shutdowntasks.ShutdownTasksBundle
 import dev.gdw.shutdowntasks.utils.RunnerAndConfigurationSettingsUtils
@@ -20,18 +19,26 @@ class RunnerAndConfigurationSettingsListCellRenderer : SimpleListCellRenderer<Ru
         selected: Boolean,
         hasFocus: Boolean
     ) {
-        if (value != null) {
-            text = value.name
-            icon = value.configuration.icon
+        // Reset the state because Swing reuses renderer components.
+        toolTipText = null
+        foreground = if (selected) {
+            list.selectionForeground
+        } else {
+            list.foreground
+        }
 
-            if (!RunnerAndConfigurationSettingsUtils.isConfigurationRunnable(value)) {
-                icon = AllIcons.RunConfigurations.TestError
-                toolTipText = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.cell.cannotBeRun.tooltip")
-                foreground = JBColor.RED
-            } else if (RunnerAndConfigurationSettingsUtils.isShConfigurationType(value)) {
-                icon = AllIcons.General.ShowWarning
-                toolTipText = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.cell.warningTerminal.tooltip")
-            }
+        if (value == null) {
+            text = ""
+            icon = null
+            return
+        }
+
+        text = value.name
+        icon = value.configuration.icon
+
+        if (RunnerAndConfigurationSettingsUtils.isShConfigurationType(value)) {
+            icon = AllIcons.General.ShowWarning
+            toolTipText = ShutdownTasksBundle.message("dialog.SelectRunConfigurations.selection.cell.warningTerminal.tooltip")
         }
     }
 }

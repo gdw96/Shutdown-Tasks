@@ -103,9 +103,23 @@ class ShutdownTasksConfigurable(private val project: Project) :
         super.apply()
 
         for (i in 0 until listModel.size()) {
-            val it = listModel.getElementAt(i)
-            if (!RunnerAndConfigurationSettingsUtils.isConfigurationRunnable(it)) {
-                RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(project, it)
+            val configuration = listModel.getElementAt(i)
+
+            val isRunnable = RunnerAndConfigurationSettingsUtils.isConfigurationRunnableWithProgress(
+                project,
+                configuration
+            )
+
+            if (isRunnable == null) {
+                return
+            }
+
+            if (!isRunnable) {
+                RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(
+                    project,
+                    configuration
+                )
+
                 return
             }
         }
@@ -151,13 +165,27 @@ class ShutdownTasksConfigurable(private val project: Project) :
         }
 
         val dialog = RunnerAndConfigurationSettingsSelectionDialog(project, availableConfigs)
-        if (dialog.showAndGet()) {
-            dialog.selectedConfigurations.forEach {
-                if (RunnerAndConfigurationSettingsUtils.isConfigurationRunnable(it)) {
-                    listModel.addElement(it)
-                } else {
-                    RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(project, it)
-                }
+        if (!dialog.showAndGet()) {
+            return
+        }
+
+        dialog.selectedConfigurations.forEach { configuration ->
+            val isRunnable = RunnerAndConfigurationSettingsUtils.isConfigurationRunnableWithProgress(
+                project,
+                configuration
+            )
+
+            if (isRunnable == null) {
+                return
+            }
+
+            if (isRunnable) {
+                listModel.addElement(configuration)
+            } else {
+                RunnerAndConfigurationSettingsUtils.openEditConfigurationDialog(
+                    project,
+                    configuration
+                )
             }
         }
     }

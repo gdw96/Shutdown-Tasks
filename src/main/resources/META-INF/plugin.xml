@@ -7,7 +7,7 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
     <name>Shutdown Tasks</name>
 
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <idea-version since-build="252"/>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
@@ -47,13 +47,11 @@
 
     <!-- Change notes for the current version -->
     <change-notes><![CDATA[
-        <h3>Version 1.0.0</h3>
+        <h3>Version 1.0.1</h3>
         <ul>
-            <li>Initial release</li>
-            <li>Execute run configurations on project/IDE shutdown</li>
-            <li>Configurable timeout per task (1-300 seconds)</li>
-            <li>Visual progress indicator with task status</li>
-            <li>Settings UI for task management</li>
+            <li>Fixed an issue that could cause an error when selecting run configurations.</li>
+            <li>Improved the stability of the shutdown task configuration screen.</li>
+            <li>Improved validation when adding or saving shutdown tasks.</li>
         </ul>
     ]]></change-notes>
 
